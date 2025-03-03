@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo de Inglês - Aprendendo com Quiz</title>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background-color: #f1f1f1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+        }
+        .container {
+            text-align: center;
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            max-width: 700px;
+        }
+        h1 {
+            color: #FF5722;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        .score {
+            font-size: 1.8em;
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+        .question {
+            font-size: 1.8em;
+            margin: 20px 0;
+            color: #2196F3;
+        }
+        .options {
+            list-style-type: none;
+            padding: 0;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        .options li {
+            background-color: #007BFF;
+            color: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.4em;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        .options li:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+        .options li.correct {
+            background-color: green !important;
+        }
+        .options li.incorrect {
+            background-color: red !important;
+        }
+        .options img {
+            width: 50px;
+            height: 50px;
+            margin-bottom: 10px;
+        }
+        .feedback {
+            margin-top: 20px;
+            font-size: 1.4em;
+            font-weight: bold;
+        }
+        .feedback.correct {
+            color: green;
+        }
+        .feedback.incorrect {
+            color: red;
+        }
+        .btn {
+            background-color: #FF5722;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.5em;
+            transition: background-color 0.3s ease;
+        }
+        .btn:hover {
+            background-color: #E64A19;
+        }
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: #333;
+        }
+        footer a {
+            color: #FF5722;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Jogo de Inglês - Quiz Interativo</h1>
+        <div class="score">
+            Pontuação: <span id="score">0</span>
+        </div>
+        <div class="question" id="question">Clique no botão para ouvir a palavra em inglês</div>
+        <ul class="options" id="options">
+            <!-- As opções serão preenchidas dinamicamente -->
+        </ul>
+        <div class="feedback" id="feedback"></div>
+        <button class="btn" onclick="nextQuestion()">Próxima Palavra</button>
+    </div>
+
+    <footer>
+        Desenvolvido por <a href="https://www.google.com" target="_blank">Natanael Carvalho</a>
+    </footer>
+
+    <script>
+        const words = [
+            { word: "otorhinolaryngological", translation: "Relativo ao estudo do ouvido, nariz e garganta", emoji: "👂" },
+            { word: "hippopotomonstrosesquipedaliofobia", translation: "Medo de palavras grandes", emoji: "🐘" },
+            { word: "pneumonoultramicroscopicsilicovolcanoconiosis", translation: "Doença pulmonar causada pela inalação de sílica", emoji: "🫁" },
+            { word: "psychoneuroendocrinological", translation: "Relativo ao estudo da psicologia, neurociência e endocrinologia", emoji: "🧠" },
+            { word: "electroencephalographically", translation: "Relativo ao estudo das atividades elétricas do cérebro", emoji: "⚡" },
+            { word: "subcompartmentalization", translation: "Ato de dividir em subcompartimentos", emoji: "📦" },
+            { word: "uncharacteristically", translation: "De maneira não característica", emoji: "🔄" },
+            { word: "counterproductive", translation: "Contraproducente", emoji: "🚫" }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+
+        // Atualiza a pergunta na tela
+        function updateQuestion() {
+            const questionText = "Qual é a tradução da palavra: " + words[currentQuestion].word.charAt(0).toUpperCase() + words[currentQuestion].word.slice(1);
+            document.getElementById('question').textContent = questionText;
+            
+            // Embaralha as opções de resposta
+            const correctAnswer = words[currentQuestion].translation;
+            const incorrectAnswers = getIncorrectAnswers(words[currentQuestion]);
+
+            // Pegue 4 respostas incorretas aleatórias e combine com a correta
+            const options = [correctAnswer, ...incorrectAnswers];
+            const shuffledOptions = shuffleArray(options);
+
+            // Preenche as opções aleatórias
+            const optionsList = document.getElementById('options');
+            optionsList.innerHTML = '';  // Limpa as opções anteriores
+
+            shuffledOptions.forEach(option => {
+                const li = document.createElement('li');
+                
+                // Encontre o emoji correspondente
+                const emoji = getEmojiForOption(option);
+                
+                li.innerHTML = `
+                    <div style="font-size: 2em;">${emoji}</div>
+                    ${option}
+                `;
+                li.onclick = function() {
+                    checkAnswer(option);
+                };
+                optionsList.appendChild(li);
+            });
+        }
+
+        // Função para embaralhar as respostas
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]]; // Troca os elementos
+            }
+            return array;
+        }
+
+        // Função para pegar 4 respostas incorretas aleatórias
+        function getIncorrectAnswers(correctWord) {
+            const incorrectAnswers = [];
+            // Pega palavras diferentes da palavra correta
+            const availableWords = words.filter(word => word.translation !== correctWord.translation);
+            while (incorrectAnswers.length < 4) {
+                const randomWord = availableWords[Math.floor(Math.random() * availableWords.length)].translation;
+                if (!incorrectAnswers.includes(randomWord)) {
+                    incorrectAnswers.push(randomWord);
+                }
+            }
+            return incorrectAnswers;
+        }
+
+        // Função para obter o emoji correspondente à resposta
+        function getEmojiForOption(option) {
+            const word = words.find(word => word.translation === option);
+            return word ? word.emoji : "";
+        }
+
+        // Reproduz a palavra usando a API SpeechSynthesis
+        function playAudio() {
+            const utterance = new SpeechSynthesisUtterance(words[currentQuestion].word);
+            utterance.lang = 'en-US';  // Definir para inglês (dos EUA), você pode mudar para outra língua
+            utterance.pitch = 1; // Tonalidade da voz
+            utterance.rate = 1;  // Velocidade da fala
+            speechSynthesis.speak(utterance);
+        }
+
+        // Verifica se a resposta está correta
+        function checkAnswer(answer) {
+            const feedback = document.getElementById('feedback');
+            const options = document.querySelectorAll('.options li');
+            options.forEach(option => option.classList.remove('correct', 'incorrect'));  // Limpa as classes antigas
+
+            if (answer === words[currentQuestion].translation) {
+                feedback.textContent = "Resposta correta!";
+                feedback.classList.add('correct');
+                score++;
+                document.getElementById('score').textContent = score;
+
+                if (score >= 25) {
+                    window.location.href = "https://natancarff.github.io/ingles/"; // Redireciona para o Google
+                }
+
+                highlightAnswer(true);
+            } else {
+                feedback.textContent = "Resposta errada. Tente novamente!";
+                feedback.classList.add('incorrect');
+                score = 0;  // Zera a pontuação
+                document.getElementById('score').textContent = score; // Atualiza a pontuação
+                highlightAnswer(false);
+            }
+        }
+
+        // Destaca a resposta correta ou incorreta
+        function highlightAnswer(isCorrect) {
+            const options = document.querySelectorAll('.options li');
+            const correctAnswer = words[currentQuestion].translation;
+            options.forEach(option => {
+                if (option.textContent === correctAnswer) {
+                    if (isCorrect) {
+                        option.classList.add('correct');
+                    } else {
+                        option.classList.add('incorrect');
+                    }
+                }
+            });
+        }
+
+        // Avança para a próxima pergunta
+        function nextQuestion() {
+            currentQuestion = (currentQuestion + 1) % words.length;
+            document.getElementById('feedback').textContent = "";
+            updateQuestion();
+            playAudio();
+        }
+
+        // Inicializa o jogo
+        function startGame() {
+            updateQuestion();  // Exibe a primeira pergunta
+            playAudio();       // Toca o áudio da primeira palavra
+        }
+
+        startGame();  // Inicia o jogo com a primeira palavra
+    </script>
+</body>
+</html>
